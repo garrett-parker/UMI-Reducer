@@ -149,7 +149,7 @@ for chr in chr_list:
             for read in samfile.fetch(chr,key,key+1):
                 if read.reference_start==key:
                     outfile.write(read)
-                    readLength_filtered.append(len(read.query_sequence))
+                    readLength_filtered.append(len(str(read.query_sequence)))
                     numberReadsUnique_filtered+=1
                     readSet.add(read.query_name)
      
