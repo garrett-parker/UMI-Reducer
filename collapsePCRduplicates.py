@@ -123,7 +123,7 @@ for chr in chr_list:
         else:
             numberReadsUniquePlusMultiMapped+=1
             position.append(read.reference_start)
-            readLength.append(len(read.query_sequence))
+            readLength.append(len(str(read.query_sequence)))
 
 
 
