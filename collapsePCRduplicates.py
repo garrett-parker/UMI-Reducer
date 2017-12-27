@@ -27,6 +27,7 @@ ap.add_argument('outbam', help='Output file to save reads after collapsing PCR d
 ap.add_argument("--MAPQ",help="mapping quality to extract uniquely-mapped reads. Only reads with this MAPQ will be selected. By default all reads will be considered", default=60,type=int)
 ap.add_argument("--u",help="a binary flag used to indicate that only uniquely mapped reads will be considered. By default uniquely mapped reads are defined as reads with MAPQ=60",action="store_true")
 ap.add_argument("--chr",help="Number of autosomes. By default 20", default=20,type=int)
+ap.add_argument('--e', action='store_true',help='UMI-tools example format')
 
 args = ap.parse_args()
 
@@ -43,13 +44,20 @@ out=args.outbam
 
 
 chr_list=[]
+if args.e:
+    for i in range(1,20):
+        chr_list.append('chr'+str(i))
 
-for i in range(1,args.chr):
-    chr_list.append(str(i))
+    chr_list.append('chrX')
+    chr_list.append('chrY')
+    chr_list.append('chrM')
+else:
+    for i in range(1,args.chr):
+        chr_list.append(str(i))
 
-chr_list.append('X')
-chr_list.append('Y')
-chr_list.append('MT')
+    chr_list.append('X')
+    chr_list.append('Y')
+    chr_list.append('MT')
 
 print (chr)
 
@@ -100,7 +108,10 @@ print ("Open ",bam, "via pysam")
 for chr in chr_list:
     dict.clear()
     position[:]=[]
-    print ("----------chr",chr)
+    if args.e:
+        print "----------",chr
+    else:
+        print ("----------chr",chr)
     for read in samfile.fetch(chr):
         mappedReads.append(read.query_name)
 
@@ -158,7 +169,10 @@ for chr in chr_list:
             for read in samfile.fetch(chr,key,key+1):
                 if read.reference_start==key:
                     Read.append(read)
-                    setReads.add(read.query_name.split("_")[3]+"_"+read.query_sequence)
+                    if args.e:
+                        setReads.add(read.query_name.split("_")[1]+"_"+str(read.query_sequence))
+                    else:
+                        setReads.add(read.query_name.split("_")[3]+"_"+read.query_sequence)
 
 
 
@@ -169,12 +183,21 @@ for chr in chr_list:
             notsetReads.clear()
             numberReadsUnique_covGreated1+=len(setReads)
             for i in range(0,val):
-                if Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence in setReads and Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence not in notsetReads:
-                        outfile.write(Read[i])
-                        numberReadsUnique_filtered+=1
-                        readLength_filtered.append(len(Read[i].query_sequence))
-                        notsetReads.add(Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence)
-                        readSet.add(Read[i].query_name)
+                if args.e:
+                    if Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence) in setReads and Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence) not in notsetReads:
+                            outfile.write(Read[i])
+                            numberReadsUnique_filtered+=1
+                            readLength_filtered.append(len(str(Read[i].query_sequence)))
+                            notsetReads.add(Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence))
+                            readSet.add(Read[i].query_name)
+                
+                else:
+                    if Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence in setReads and Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence not in notsetReads:
+                            outfile.write(Read[i])
+                            numberReadsUnique_filtered+=1
+                            readLength_filtered.append(len(Read[i].query_sequence))
+                            notsetReads.add(Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence)
+                            readSet.add(Read[i].query_name)
 
 
 
