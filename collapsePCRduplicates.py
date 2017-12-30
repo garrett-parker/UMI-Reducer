@@ -27,7 +27,10 @@ ap.add_argument('outbam', help='Output file to save reads after collapsing PCR d
 ap.add_argument("--MAPQ",help="mapping quality to extract uniquely-mapped reads. Only reads with this MAPQ will be selected. By default all reads will be considered", default=60,type=int)
 ap.add_argument("--u",help="a binary flag used to indicate that only uniquely mapped reads will be considered. By default uniquely mapped reads are defined as reads with MAPQ=60",action="store_true")
 ap.add_argument("--chr",help="Number of autosomes. By default 20", default=20,type=int)
+ap.add_argument("--end",help="a binary flag used to indicate that end position is considered. This is beta version use with caution",action="store_true")
 ap.add_argument('--e', action='store_true',help='UMI-tools example format')
+
+
 
 args = ap.parse_args()
 
@@ -44,6 +47,7 @@ out=args.outbam
 
 
 chr_list=[]
+
 if args.e:
     for i in range(1,20):
         chr_list.append('chr'+str(i))
@@ -51,6 +55,7 @@ if args.e:
     chr_list.append('chrX')
     chr_list.append('chrY')
     chr_list.append('chrM')
+
 else:
     for i in range(1,args.chr):
         chr_list.append(str(i))
@@ -146,8 +151,10 @@ for chr in chr_list:
         count+=1
         
         if val==1:
+
             for read in samfile.fetch(chr,key,key+1):
                 if read.reference_start==key:
+
                     outfile.write(read)
                     readLength_filtered.append(len(str(read.query_sequence)))
                     numberReadsUnique_filtered+=1
@@ -169,35 +176,67 @@ for chr in chr_list:
             for read in samfile.fetch(chr,key,key+1):
                 if read.reference_start==key:
                     Read.append(read)
-                    if args.e:
-                        setReads.add(read.query_name.split("_")[1]+"_"+str(read.query_sequence))
+                    if args.end:
+                        #UMI-tools format
+                        if args.e:
+                            setReads.add(read.query_name.split("_")[1] + "_" + str(read.query_sequence))
+                        #default format
+                        else:
+                            setReads.add(read.query_name.split("_")[3] + "_" + read.query_sequence)
                     else:
-                        setReads.add(read.query_name.split("_")[3]+"_"+read.query_sequence)
+                        #UMI-tools format
+                        if args.e:
+                            setReads.add(read.query_name.split("_")[1]+"_"+str(read.query_sequence))
+                        #default format
+                        else:
+                            setReads.add(read.query_name.split("_")[3]+"_"+read.query_sequence+"_"+str(read.reference_end))
 
 
+                    #print (read.query_sequence,read.query_name,read.query_name.split("_")[3],read.reference_start,read.reference_end)
 
-            
             
 
             notsetReads=set()
             notsetReads.clear()
             numberReadsUnique_covGreated1+=len(setReads)
             for i in range(0,val):
-                if args.e:
-                    if Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence) in setReads and Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence) not in notsetReads:
-                            outfile.write(Read[i])
-                            numberReadsUnique_filtered+=1
-                            readLength_filtered.append(len(str(Read[i].query_sequence)))
-                            notsetReads.add(Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence))
-                            readSet.add(Read[i].query_name)
-                
+                if args.end:
+                    #UMI-tools format
+                    if args.e:
+                        extended_read_name = Read[i].query_name.split("_")[1] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end)
+                    #default format
+                    else:
+                        extended_read_name = Read[i].query_name.split("_")[3] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end)
                 else:
-                    if Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence in setReads and Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence not in notsetReads:
-                            outfile.write(Read[i])
-                            numberReadsUnique_filtered+=1
-                            readLength_filtered.append(len(Read[i].query_sequence))
-                            notsetReads.add(Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence)
-                            readSet.add(Read[i].query_name)
+                    #UMI-tools format
+                    if args.e:
+                        extended_read_name=Read[i].query_name.split("_")[1]+"_"+Read[i].query_sequence
+                    #default format
+                    else:
+                        extended_read_name=Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence
+
+                if extended_read_name in setReads and extended_read_name not in notsetReads:
+                        outfile.write(Read[i])
+                        numberReadsUnique_filtered+=1
+                        readLength_filtered.append(len(str(Read[i].query_sequence)))
+
+
+                        if args.end:
+                            #UMI-tools format
+                            if args.e:
+                                notsetReads.add(Read[i].query_name.split("_")[1] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end))
+                            #default format
+                            else:
+                                notsetReads.add(Read[i].query_name.split("_")[3] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end))
+                        else:
+                            #UMI-tools format
+                            if args.e:
+                                notsetReads.add(Read[i].query_name.split("_")[1]+"_"+Read[i].query_sequence)
+                            #default format
+                            else:
+                                notsetReads.add(Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence)
+
+                        readSet.add(Read[i].query_name)
 
 
 
@@ -230,6 +269,7 @@ nr.append(len(readSet))
 
 
 stat_f=out.split('.')[0]+'.number_of_reads_stat'
+print ("Save to ", stat_f)
 
 with open(stat_f, 'w') as fp:
     a = csv.writer(fp, delimiter=',')
