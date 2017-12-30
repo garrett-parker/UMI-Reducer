@@ -203,7 +203,7 @@ for chr in chr_list:
                 if args.end:
                     #UMI-tools format
                     if args.e:
-                        extended_read_name = Read[i].query_name.split("_")[1] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end)
+                        extended_read_name = Read[i].query_name.split("_")[1] + "_" + str(Read[i].query_sequence)+"_"+str(Read[i].reference_end)
                     #default format
                     else:
                         extended_read_name = Read[i].query_name.split("_")[3] + "_" + Read[i].query_sequence+"_"+str(Read[i].reference_end)
