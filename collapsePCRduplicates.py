@@ -231,7 +231,7 @@ for chr in chr_list:
                         else:
                             #UMI-tools format
                             if args.e:
-                                notsetReads.add(Read[i].query_name.split("_")[1]+"_"+Read[i].query_sequence)
+                                notsetReads.add(Read[i].query_name.split("_")[1]+"_"+str(Read[i].query_sequence))
                             #default format
                             else:
                                 notsetReads.add(Read[i].query_name.split("_")[3]+"_"+Read[i].query_sequence)
